@@ -7,31 +7,24 @@ import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-import java.awt.event.ActionEvent;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class Main extends Application implements ChangeListener<Boolean>{
 
     Stage window;
     Scene scene;
 
-    //price
-    Map<String, Float> sizes;
-    Map<String, Float> breads;
-    Map<String, Float> filling;
+    ArrayList<ArrayList<Ingredient>> options;
 
     Boolean eatIn = true;
 
     int currentRow;
     int currentColumn;
-
     GridPane layout;
+
+    Label price;
 
     public static void main(String[] args) {
 	launch(args);
@@ -55,10 +48,13 @@ public class Main extends Application implements ChangeListener<Boolean>{
 
         currentColumn += 2;
         currentRow = 1;
+        price = new Label("£0.00");
+        GridPane.setConstraints(price, currentColumn, currentRow);
+        currentRow ++;
         Button button = new Button("Buy");
         GridPane.setConstraints(button, currentColumn, currentRow);
 
-        layout.getChildren().add(button);
+        layout.getChildren().addAll(price, button);
 
         scene = new Scene(layout, 400, 400);
 
@@ -68,55 +64,55 @@ public class Main extends Application implements ChangeListener<Boolean>{
     }
 
     private void addOptions() {
-        Label title = new Label("Size");
+
+        Label title = new Label("Ingredient");
         GridPane.setConstraints(title, currentColumn, currentRow);
         layout.getChildren().add(title);
         currentRow ++;
 
-        Set<Map.Entry<String, Float>> set = sizes.entrySet();
-        addOptionsFromSet(set, false);
+        ArrayList<Ingredient> sizes = options.get(0);
+        addOptionsFromArrayList(sizes, false);
 
         title = new Label("Bread");
         GridPane.setConstraints(title, currentColumn, currentRow);
         layout.getChildren().add(title);
         currentRow ++;
 
-        set = breads.entrySet();
-        addOptionsFromSet(set, false);
+        ArrayList<Ingredient> breads = options.get(1);
+        addOptionsFromArrayList(breads, false);
 
         title = new Label("Fillings");
         GridPane.setConstraints(title, currentColumn, currentRow);
         layout.getChildren().add(title);
         currentRow ++;
 
-        set = filling.entrySet();
-        addOptionsFromSet(set, true);
+        ArrayList<Ingredient> fillings = options.get(2);
+        addOptionsFromArrayList(fillings, true);
     }
 
-    private void addOptionsFromSet(Set<Map.Entry<String, Float>> set, boolean multi) {
+    private void addOptionsFromArrayList(ArrayList<Ingredient> ingredientArrayList, boolean multi) {
         ToggleGroup group = new ToggleGroup();
-        for (Map.Entry<String, Float> currentMap : set) {
+        for (Ingredient ingredient : ingredientArrayList) {
             CheckBox currentBox;
             RadioButton currentRadio;
             if (multi) {
-                currentBox = new CheckBox(currentMap.getKey());
-
+                currentBox = new CheckBox(ingredient.getNAME());
                 currentBox.selectedProperty().addListener(this);
-
                 GridPane.setConstraints(currentBox, currentColumn, currentRow);
                 layout.getChildren().add(currentBox);
+                ingredient.setINDEX(layout.getChildren().indexOf(currentBox));
             } else {
-                currentRadio = new RadioButton(currentMap.getKey());
+                currentRadio = new RadioButton(ingredient.getNAME());
 
                 currentRadio.selectedProperty().addListener(this);
 
                 currentRadio.setToggleGroup(group);
                 GridPane.setConstraints(currentRadio, currentColumn, currentRow);
                 layout.getChildren().add(currentRadio);
-
+                ingredient.setINDEX(layout.getChildren().indexOf(currentRadio));
             }
 
-            Label currentLabel = new Label("" + currentMap.getValue());
+            Label currentLabel = new Label("" + ingredient.getPRICE());
             GridPane.setConstraints(currentLabel, (currentColumn + 1), currentRow);
             currentRow ++;
 
@@ -125,27 +121,68 @@ public class Main extends Application implements ChangeListener<Boolean>{
     }
 
     private void initializePrices() {
-        sizes = new HashMap<>();
-        sizes.put("Six-Inch", 1.65f);
-        sizes.put("Twelve-Inch", 2.05f);
 
-        breads = new HashMap<>();
-        breads.put("Plain", 0.40f);
-        breads.put("Wheat", 0.65f);
-        breads.put("Italian", 0.75f);
-        breads.put("Cheese & Herbs", 0.80f);
+        options = new ArrayList<>();
 
-        filling = new HashMap<>();
-        filling.put("Cheese & Tomato", 0.95f);
-        filling.put("Italian Bacon & Peperoni", 1.10f);
-        filling.put("Tuna & Mayo", 0.95f);
-        filling.put("Turkey & Ham", 1.35f);
-        filling.put("Chicken Teriyaki", 1.40f);
-        filling.put("Steak & Cheese", 1.95f);
+        ArrayList<Ingredient> sizes = new ArrayList<>();
+        sizes.addAll(Arrays.asList(
+                new Ingredient("Six-Inch", 165, false),
+                new Ingredient("Twelve-Inch", 165, false)));
+
+        ArrayList<Ingredient> breads = new ArrayList<>();
+        breads.addAll(Arrays.asList(
+                new Ingredient("Plain", 40, false),
+                new Ingredient("Wheat", 65, false),
+                new Ingredient("Italian", 75, false),
+                new Ingredient("Cheese & Herbs", 80, false)
+        ));
+
+        ArrayList<Ingredient> fillings = new ArrayList<>();
+        fillings.addAll(Arrays.asList(
+                new Ingredient("Cheese", 45, true),
+                new Ingredient("Tomato", 45, true),
+                new Ingredient("Bacon", 55, true),
+                new Ingredient("Pepperoni", 55, true),
+                new Ingredient("Tuna", 45, true),
+                new Ingredient("Mayo", 45, true),
+                new Ingredient("Turkey", 70, true),
+                new Ingredient("Ham", 70, true),
+                new Ingredient("Chicken Teriyaki", 140, true),
+                new Ingredient("Steak", 100, true),
+                new Ingredient("Cheese", 100, true)
+        ));
+
+        options.addAll(Arrays.asList(
+                sizes, breads, fillings
+        ));
+
     }
 
     @Override
     public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
         System.out.println("Button Pressed: " + oldValue + " to " + newValue);
+
+        Integer price = 0;
+        for (ArrayList<Ingredient> ingredientArrayList : options) {
+            for (Ingredient ingredient : ingredientArrayList) {
+                int ingredientIndex = ingredient.getINDEX();
+                if (ingredient.isMULTI()) {
+                    CheckBox currentCheckBox = (CheckBox) layout.getChildren().get(ingredientIndex);
+                    if (currentCheckBox.isSelected()) {
+                        price += ingredient.getPRICE();
+                    }
+                } else {
+                    RadioButton currentRadioButton = (RadioButton) layout.getChildren().get(ingredientIndex);
+                    if (currentRadioButton.isSelected()) {
+                        price += ingredient.getPRICE();
+                    }
+                }
+            }
+        }
+
+        System.out.println("Price: " + price);
+
+
+        this.price.setText("£" + (price.floatValue() / 100));
     }
 }
