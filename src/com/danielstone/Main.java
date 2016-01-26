@@ -10,6 +10,7 @@ import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 
 import java.util.*;
+import java.util.regex.Matcher;
 
 public class Main extends Application implements ChangeListener<Boolean>{
 
@@ -112,7 +113,7 @@ public class Main extends Application implements ChangeListener<Boolean>{
                 ingredient.setINDEX(layout.getChildren().indexOf(currentRadio));
             }
 
-            Label currentLabel = new Label("" + ingredient.getPRICE());
+            Label currentLabel = new Label("£" + addZeros((ingredient.getPRICE().doubleValue() / 100)));
             GridPane.setConstraints(currentLabel, (currentColumn + 1), currentRow);
             currentRow ++;
 
@@ -158,6 +159,23 @@ public class Main extends Application implements ChangeListener<Boolean>{
 
     }
 
+    private String addZeros(Double priceDouble) {
+
+        String returnPrice;
+
+        String price = Double.toString(priceDouble);
+        int integerPlaces = price.indexOf('.');
+        int decimalPlaces = price.length() - integerPlaces - 1;
+
+        if (decimalPlaces < 2) {
+            returnPrice = price + "0";
+        } else {
+            returnPrice = price;
+        }
+
+        return returnPrice;
+    }
+
     @Override
     public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
         System.out.println("Button Pressed: " + oldValue + " to " + newValue);
@@ -180,9 +198,9 @@ public class Main extends Application implements ChangeListener<Boolean>{
             }
         }
 
-        System.out.println("Price: " + price);
+        System.out.println("Price: " + (price.floatValue() / 100));
 
 
-        this.price.setText("£" + (price.floatValue() / 100));
+        this.price.setText("£" + addZeros((price.doubleValue() / 100)));
     }
 }
