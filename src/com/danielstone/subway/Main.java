@@ -1,4 +1,4 @@
-package com.danielstone;
+package com.danielstone.subway;
 
 import javafx.application.Application;
 import javafx.beans.value.ChangeListener;
@@ -10,7 +10,6 @@ import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 
 import java.util.*;
-import java.util.regex.Matcher;
 
 public class Main extends Application implements ChangeListener<Boolean>{
 

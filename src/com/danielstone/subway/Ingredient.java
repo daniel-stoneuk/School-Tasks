@@ -1,4 +1,4 @@
-package com.danielstone;
+package com.danielstone.subway;
 
 public class Ingredient {
 

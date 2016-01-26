@@ -1,4 +1,4 @@
-package com.danielstone;
+package com.danielstone.subway;
 
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
