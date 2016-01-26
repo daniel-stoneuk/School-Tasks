@@ -53,6 +53,7 @@ public class Main extends Application implements ChangeListener<Boolean>{
         GridPane.setConstraints(price, currentColumn, currentRow);
         currentRow ++;
         Button button = new Button("Buy");
+        button.setOnAction(event -> buttonPressed());
         GridPane.setConstraints(button, currentColumn, currentRow);
 
         layout.getChildren().addAll(price, button);
@@ -180,6 +181,16 @@ public class Main extends Application implements ChangeListener<Boolean>{
     public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
         System.out.println("Button Pressed: " + oldValue + " to " + newValue);
 
+        Integer price = totalPrice();
+
+
+        System.out.println("Price: " + (price.floatValue() / 100));
+
+
+        this.price.setText("£" + addZeros((price.doubleValue() / 100)));
+    }
+
+    private Integer totalPrice() {
         Integer price = 0;
         for (ArrayList<Ingredient> ingredientArrayList : options) {
             for (Ingredient ingredient : ingredientArrayList) {
@@ -197,10 +208,10 @@ public class Main extends Application implements ChangeListener<Boolean>{
                 }
             }
         }
+        return price;
+    }
 
-        System.out.println("Price: " + (price.floatValue() / 100));
-
-
-        this.price.setText("£" + addZeros((price.doubleValue() / 100)));
+    public void buttonPressed() {
+        AlertBox.display("Purchased", "Purchased for £" + addZeros((totalPrice().doubleValue() / 100)));
     }
 }
