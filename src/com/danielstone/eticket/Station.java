@@ -2,9 +2,6 @@ package com.danielstone.eticket;
 
 import javax.swing.text.Style;
 
-/**
- * Created by user on 26/01/2016.
- */
 public class Station {
     String NAME;
     int POSITION;
@@ -16,5 +13,9 @@ public class Station {
 
     public String getNAME() {
         return NAME;
+    }
+
+    public int getPOSITION() {
+        return POSITION;
     }
 }
