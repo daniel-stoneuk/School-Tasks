@@ -1,6 +1,7 @@
 package com.danielstone.eticket;
 
 
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -17,27 +18,33 @@ public class ChoosePeople {
     static int currentColumn;
     static int currentRow;
 
-    static GridPane layout;
+    static Stage window;
+    static GridPane gridPane;
 
-    public static int display(String title, String message) {
-        people = -1;
-        Stage window = new Stage();
+    public static int display(String title, String message, int oldPeople) {
+        people = oldPeople;
+        window = new Stage();
         window.initModality(Modality.APPLICATION_MODAL);
         window.setTitle(title);
         window.setMinWidth(250);
 
-        layout = new GridPane();
+        gridPane = new GridPane();
 
         currentColumn = 0;
         currentRow = 0;
 
         Label label = new Label();
         label.setText("Number of" + message);
-        GridPane.setConstraints(label, currentColumn, currentRow);
         currentRow++;
-        layout.getChildren().addAll(label);
 
         generateButtons(9);
+        gridPane.setAlignment(Pos.CENTER);
+        gridPane.setPadding(new Insets(0, 20, 20, 20));
+
+        VBox layout = new VBox(10);
+        layout.setPadding(new Insets(10, 0, 0, 0));
+        layout.getChildren().addAll(label, gridPane);
+        layout.setAlignment(Pos.CENTER);
 
         Scene scene = new Scene(layout);
         window.setScene(scene);
@@ -48,9 +55,14 @@ public class ChoosePeople {
 
     public static void generateButtons(int numberToGenerate) {
         for (int i = 0; i < numberToGenerate; i++) {
-            Button currentButton = new Button(""+i);
+            int number = i;
+            Button currentButton = new Button(""+number);
+            currentButton.setOnAction(event -> {
+                people = number;
+                window.close();
+            });
             GridPane.setConstraints(currentButton, currentColumn, currentRow);
-            layout.getChildren().add(currentButton);
+            gridPane.getChildren().add(currentButton);
             currentColumn++;
             if (currentColumn > 2) {
                 currentRow ++;

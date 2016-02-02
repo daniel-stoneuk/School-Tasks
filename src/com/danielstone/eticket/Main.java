@@ -3,21 +3,17 @@ package com.danielstone.eticket;
 
 import com.sun.istack.internal.Nullable;
 import javafx.application.Application;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 
 public class Main extends Application {
 
@@ -29,6 +25,9 @@ public class Main extends Application {
     Label priceLabel;
     boolean changeListenerActive = true;
     RadioButton singleRadio;
+
+    int numberOfAdults = -1;
+    int numberOfChildren = -1;
 
     String ARRIVE_TAG = "ARRIVE";
     String DEPART_TAG = "DEPART";
@@ -76,12 +75,30 @@ public class Main extends Application {
 
 
 
-        priceLabel = new Label("£0.00");
+        priceLabel = new Label("Enter ticket quantity");
         GridPane.setConstraints(priceLabel, 0, 3, 2, 1, HPos.CENTER, VPos.CENTER);
 
-        layout.getChildren().addAll(departChoiceBox, arriveChoiceBox, priceLabel, singleRadio, returnRadio);
+        Button children = new Button("Children: -click-");
+        children.setOnAction(event -> {
+            int selected = ChoosePeople.display("Children", "children", numberOfChildren);
+            numberOfChildren = selected;
+            setPeopleButton(children, "Children: ", selected);
+        });
+        children.setMinWidth(200);
+        children.setAlignment(Pos.CENTER);
+        GridPane.setConstraints(children, 0, 0, 2, 1);
 
-        ChoosePeople.display("title", "people");
+        Button adults = new Button("Adults: -click-");
+        adults.setOnAction(event -> {
+            int selected = ChoosePeople.display("Adults", "adults", numberOfAdults);
+            numberOfAdults = selected;
+            setPeopleButton(adults, "Adults: ", selected);
+        });
+        adults.setMinWidth(200);
+        adults.setAlignment(Pos.CENTER);
+        GridPane.setConstraints(adults, 3, 0, 2, 1);
+
+        layout.getChildren().addAll(departChoiceBox, arriveChoiceBox, priceLabel, singleRadio, returnRadio, children, adults);
 
         scene = new Scene(layout);
 
@@ -89,6 +106,12 @@ public class Main extends Application {
         window.setTitle("E-Ticket Machine");
         window.show();
 
+    }
+
+    private void setPeopleButton(Button button, String prefix, int choice) {
+        button.setText(prefix + choice);
+
+        updateCost();
     }
 
     private ArrayList<String> getStationNames(@Nullable Integer removeIndex, String arriveOrDepart) {
@@ -143,9 +166,9 @@ public class Main extends Application {
 
             changeListenerActive = false;
 
-            System.out.println(newValue);
+            //System.out.println(newValue);
             int position = findPosition(newValue, stationArrayList);
-            System.out.println("" + position);
+            //System.out.println("" + position);
 
             String departChoiceBoxSelected = departChoiceBox.getValue();
             String arriveChoiceBoxSelected = arriveChoiceBox.getValue();
@@ -177,30 +200,55 @@ public class Main extends Application {
 
         String resultText = "";
 
-        if (numberOfStops != -1) {
+        if (numberOfStops != -1 && peopleSelectedBool()) {
             if (numberOfStops >= 1 && numberOfStops <= 4) {
-                cost = 185;
+                cost = 18500;
             } else if (numberOfStops >= 5 && numberOfStops <= 6) {
-                cost = 260;
+                cost = 26000;
             } else if (numberOfStops >= 7) {
-                cost = 310;
+                cost = 31000;
             }
 
             if (!single) {
                 int discount = cost / 100 * 13;
                 cost = cost - discount;
             }
-            resultText = numberOfStops + " Stop(s) - £"+ addZeros(cost.doubleValue() / 100);
+
+            Integer totalCost = 0;
+
+            for (int i = 0; i < numberOfAdults; i++) {
+                totalCost = totalCost + cost;
+            }
+
+            int discount = cost / 200 * 25;
+            int childCost = cost - discount;
+
+            for (int i = 0; i < numberOfChildren; i++) {
+                totalCost = totalCost + childCost;
+            }
+
+            System.out.println(""+totalCost);
+
+            resultText = numberOfStops + " Stop(s) - £"+ addZeros(totalCost.doubleValue() / 10000);
         } else {
-            resultText = "Please choose two stations";
+            if (!peopleSelectedBool()) {
+                resultText = "Enter ticket quantity";
+            } else {
+                resultText = "Please choose two stations";
+            }
         }
 
-        System.out.println(""+cost);
+
 
         priceLabel.setText(resultText);
     }
 
-
+    private boolean peopleSelectedBool() {
+        if (numberOfAdults != -1 && numberOfChildren != -1) {
+            return true;
+        }
+        return false;
+    }
 
     private Integer generateNumberOfStops() {
         boolean complicatedStuff = false;
@@ -239,6 +287,12 @@ public class Main extends Application {
 
         if (decimalPlaces < 2) {
             returnPrice = price + "0";
+        } else if (decimalPlaces > 2){
+            while (decimalPlaces > 2) {
+                price = price.substring(0, price.length() -1 );
+                decimalPlaces = price.length() - integerPlaces - 1;
+            }
+            returnPrice = price;
         } else {
             returnPrice = price;
         }
