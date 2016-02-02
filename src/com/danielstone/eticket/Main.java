@@ -1,6 +1,7 @@
 package com.danielstone.eticket;
 
 
+import com.sun.istack.internal.Nullable;
 import javafx.application.Application;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -8,9 +9,7 @@ import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.VPos;
 import javafx.scene.Scene;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.Label;
+import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -26,9 +25,10 @@ public class Main extends Application {
     Scene scene;
     ArrayList<Station> stationArrayList;
     ChoiceBox<String> departChoiceBox, arriveChoiceBox;
-    int removedDepart, removedArrive;
+    int removedDepart, removedArrive = 0;
     Label priceLabel;
     boolean changeListenerActive = true;
+    RadioButton singleRadio;
 
     String ARRIVE_TAG = "ARRIVE";
     String DEPART_TAG = "DEPART";
@@ -61,10 +61,27 @@ public class Main extends Application {
         departChoiceBox.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> changed(departChoiceBox, oldValue, newValue));
         arriveChoiceBox.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> changed(arriveChoiceBox, oldValue, newValue));
 
+        ToggleGroup amountGroup = new ToggleGroup();
+        singleRadio = new RadioButton("Single");
+        singleRadio.setToggleGroup(amountGroup);
+        singleRadio.setSelected(true);
+        GridPane.setConstraints(singleRadio, 3, 3);
+
+        RadioButton returnRadio = new RadioButton("Return");
+        returnRadio.setToggleGroup(amountGroup);
+        GridPane.setConstraints(returnRadio, 4, 3);
+
+        singleRadio.selectedProperty().addListener((observable, oldValue, newValue) -> updateCost());
+        returnRadio.selectedProperty().addListener((observable, oldValue, newValue) -> updateCost());
+
+
+
         priceLabel = new Label("£0.00");
         GridPane.setConstraints(priceLabel, 0, 3, 2, 1, HPos.CENTER, VPos.CENTER);
 
-        layout.getChildren().addAll(departChoiceBox, arriveChoiceBox, priceLabel);
+        layout.getChildren().addAll(departChoiceBox, arriveChoiceBox, priceLabel, singleRadio, returnRadio);
+
+        ChoosePeople.display("title", "people");
 
         scene = new Scene(layout);
 
@@ -74,14 +91,21 @@ public class Main extends Application {
 
     }
 
-    private ArrayList<String> getStationNames(Integer removeIndex, String arriveOrDepart) {
+    private ArrayList<String> getStationNames(@Nullable Integer removeIndex, String arriveOrDepart) {
         ArrayList<String> result = new ArrayList<>();
 
         int currentIndex = 0;
+        int removed = -1;
+        boolean isNull = false;
+        if (removeIndex == null) {
+            isNull = true;
+        } else {
+            removed = removeIndex;
+        }
 
         for (Station station:
              stationArrayList) {
-            if (removeIndex == null) {
+            if (isNull) {
                 result.add(station.getNAME());
             } else if (removeIndex != currentIndex){
                 result.add(station.getNAME());
@@ -89,10 +113,12 @@ public class Main extends Application {
             }
             currentIndex ++;
         }
-        if (arriveOrDepart.equals(ARRIVE_TAG)) {
-            removedArrive = removeIndex;
-        } else {
-            removedDepart = removeIndex;
+        if (!isNull) {
+            if (arriveOrDepart.equals(ARRIVE_TAG) && removed != -1) {
+                removedArrive = removed;
+            } else if (removed != -1) {
+                removedDepart = removed;
+            }
         }
         return result;
     }
@@ -141,20 +167,17 @@ public class Main extends Application {
     }
 
     private void updateCost() {
-        int departChoiceBoxPosition = -1;
-        if (departChoiceBox.getValue() != null) departChoiceBoxPosition = findPosition(departChoiceBox.getValue(), stationArrayList);
-
-
-        int arriveChoiceBoxPosition = -1;
-        if (arriveChoiceBox.getValue() != null) arriveChoiceBoxPosition = findPosition(arriveChoiceBox.getValue(), stationArrayList);
         Integer cost = 0;
 
-        int numberOfStops = arriveChoiceBoxPosition - departChoiceBoxPosition;
-        if (numberOfStops < 0) numberOfStops = (numberOfStops * -1) -1;
+        boolean single = singleRadio.isSelected();
+
+        Integer numberOfStops = generateNumberOfStops();
 
         System.out.println("Stops: " + numberOfStops);
 
-        if (arriveChoiceBoxPosition != -1 && departChoiceBoxPosition != -1) {
+        String resultText = "";
+
+        if (numberOfStops != -1) {
             if (numberOfStops >= 1 && numberOfStops <= 4) {
                 cost = 185;
             } else if (numberOfStops >= 5 && numberOfStops <= 6) {
@@ -162,11 +185,48 @@ public class Main extends Application {
             } else if (numberOfStops >= 7) {
                 cost = 310;
             }
+
+            if (!single) {
+                int discount = cost / 100 * 13;
+                cost = cost - discount;
+            }
+            resultText = numberOfStops + " Stop(s) - £"+ addZeros(cost.doubleValue() / 100);
+        } else {
+            resultText = "Please choose two stations";
         }
 
         System.out.println(""+cost);
 
-        priceLabel.setText(numberOfStops + " Stop(s) - £"+addZeros(cost.doubleValue() / 100));
+        priceLabel.setText(resultText);
+    }
+
+
+
+    private Integer generateNumberOfStops() {
+        boolean complicatedStuff = false;
+
+        int departChoiceBoxPosition = -1;
+        if (departChoiceBox.getValue() != null) departChoiceBoxPosition = findPosition(departChoiceBox.getValue(), stationArrayList);
+        if (departChoiceBoxPosition != -1 && departChoiceBoxPosition >= removedDepart) {
+            departChoiceBoxPosition ++;
+            complicatedStuff = true;
+        }
+
+        int arriveChoiceBoxPosition = -1;
+        if (arriveChoiceBox.getValue() != null) arriveChoiceBoxPosition = findPosition(arriveChoiceBox.getValue(), stationArrayList);
+        if (arriveChoiceBoxPosition != -1 && arriveChoiceBoxPosition >= removedArrive) {
+            arriveChoiceBoxPosition ++;
+            complicatedStuff = true;
+        }
+
+        int numberOfStops = arriveChoiceBoxPosition - departChoiceBoxPosition;
+        if (numberOfStops < 0) numberOfStops = (numberOfStops * -1) -1;
+
+        if (arriveChoiceBoxPosition < departChoiceBoxPosition) numberOfStops = numberOfStops + 1;
+
+        if (complicatedStuff) numberOfStops = numberOfStops - 1;
+
+        return (arriveChoiceBoxPosition != -1 && departChoiceBoxPosition != -1) ? numberOfStops : -1;
     }
 
     private String addZeros(Double priceDouble) {
