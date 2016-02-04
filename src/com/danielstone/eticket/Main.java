@@ -81,7 +81,7 @@ public class Main extends Application {
         Button children = new Button("Children: -click-");
         children.setOnAction(event -> {
             int selected = ChoosePeople.display("Children", "children", numberOfChildren);
-            numberOfChildren = selected;
+            if (selected != -1) numberOfChildren = selected;
             setPeopleButton(children, "Children: ", selected);
         });
         children.setMinWidth(200);
@@ -91,7 +91,7 @@ public class Main extends Application {
         Button adults = new Button("Adults: -click-");
         adults.setOnAction(event -> {
             int selected = ChoosePeople.display("Adults", "adults", numberOfAdults);
-            numberOfAdults = selected;
+            if (selected != -1) numberOfAdults = selected;
             setPeopleButton(adults, "Adults: ", selected);
         });
         adults.setMinWidth(200);
@@ -109,9 +109,11 @@ public class Main extends Application {
     }
 
     private void setPeopleButton(Button button, String prefix, int choice) {
-        button.setText(prefix + choice);
 
-        updateCost();
+        if (choice != -1) {
+            button.setText(prefix + choice);
+            updateCost();
+        }
     }
 
     private ArrayList<String> getStationNames(@Nullable Integer removeIndex, String arriveOrDepart) {
@@ -202,16 +204,16 @@ public class Main extends Application {
 
         if (numberOfStops != -1 && peopleSelectedBool()) {
             if (numberOfStops >= 1 && numberOfStops <= 4) {
-                cost = 18500;
+                cost = 1850000;
             } else if (numberOfStops >= 5 && numberOfStops <= 6) {
-                cost = 26000;
+                cost = 2600000;
             } else if (numberOfStops >= 7) {
-                cost = 31000;
+                cost = 3100000;
             }
 
             if (!single) {
                 int discount = cost / 100 * 13;
-                cost = cost - discount;
+                cost = cost + (cost - discount);
             }
 
             Integer totalCost = 0;
@@ -229,7 +231,7 @@ public class Main extends Application {
 
             System.out.println(""+totalCost);
 
-            resultText = numberOfStops + " Stop(s) - £"+ addZeros(totalCost.doubleValue() / 10000);
+            resultText = numberOfStops + " Stop(s) - £"+ addZeros(totalCost.doubleValue() / 1000000);
         } else {
             if (!peopleSelectedBool()) {
                 resultText = "Enter ticket quantity";
