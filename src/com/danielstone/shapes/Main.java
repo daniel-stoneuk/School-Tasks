@@ -2,27 +2,23 @@ package com.danielstone.shapes;
 
 import com.sun.istack.internal.Nullable;
 import javafx.application.Application;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
-import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.ArcType;
-import javafx.scene.shape.Circle;
-import javafx.scene.shape.Polygon;
+import javafx.scene.paint.Paint;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
-import sun.corba.EncapsInputStreamFactory;
 
 import java.util.ArrayList;
-import java.util.DoubleSummaryStatistics;
 
 
 public class Main extends Application {
@@ -33,7 +29,8 @@ public class Main extends Application {
 
     GraphicsContext theGc;
 
-    Label tempLabel;
+    Label titleLabel, numberOfPointsLabel;
+    Button resetButton;
 
     private final int FILL = 1;
     private final int FILL_WITH_STROKE = 2;
@@ -73,11 +70,21 @@ public class Main extends Application {
         GraphicsContext gc = canvas.getGraphicsContext2D();
         theGc = gc;
         GridPane options = new GridPane();
-
         options.setPadding(new Insets(20));
-        tempLabel = new Label("Draw Shapes!");
-        tempLabel.setFont(new Font("Segoe UI", 30));
-        options.add(tempLabel, 0, 0, 2, 1);
+
+        titleLabel = new Label("Draw Shapes!");
+        titleLabel.setFont(new Font("Segoe UI", 30));
+        options.add(titleLabel, 0, 0, 2, 1);
+
+        numberOfPointsLabel = new Label("0 points");
+        numberOfPointsLabel.setFont(new Font("Segoe UI", 15));
+        options.add(numberOfPointsLabel, 0, 1, 1, 1);
+
+        resetButton = new Button("Reset");
+        resetButton.setFont(new Font("Segoe UI", 15));
+        resetButton.setOnAction(event -> resetButtonClicked(event));
+        options.setMargin(resetButton, new Insets(0, 0, 0, 20));
+        options.add(resetButton, 1, 1, 1, 1);
 
         root.add(canvas, 0, 0);
         root.add(options, 0, 1);
@@ -88,14 +95,17 @@ public class Main extends Application {
         pointsArray = new ArrayList<>();
 
         drawShapes(gc);
-        gc.setStroke(Color.LIGHTGRAY);
-        gc.setLineWidth(0.5);
         drawGrid(gc);
     }
 
+    private void resetButtonClicked(ActionEvent event) {
+        pointsArray.clear();
+        reRender();
+    }
+
     private void canvasClick(int x, int y) {
-        x = snapToGrid(x);
-        y = snapToGrid(y);
+        x = snapToGridPixels(x);
+        y = snapToGridPixels(y);
         System.out.println("x: " +x + "   :   y: " + y);
 
         Integer check = checkIfCircleExists(x  - circleWidth /2, y  - circleHeight /2);
@@ -110,13 +120,30 @@ public class Main extends Application {
     private void reRender() {
         theGc.clearRect(0, 0, canvasX, canvasY);
         drawGrid(theGc);
+        int numberOfPoints = 0;
+        ArrayList<double[]> gridPointsArray = new ArrayList<>();
         for (com.danielstone.shapes.Circle circle : pointsArray) {
             theGc.setFill(circle.color);
             theGc.fillOval(circle.x, circle.y, circle.width, circle.height);
+            numberOfPoints ++;
+            gridPointsArray.add(new double[] {pixelsToGrid(snapToGridPixels(circle.x)), pixelsToGrid(snapToGridPixels(circle.y))});
         }
+
+        if (gridPointsArray.size() >= 3){
+            double[] xPoints = new double[gridPointsArray.size()];
+            double[] yPoints = new double[gridPointsArray.size()];
+            for (int i = 0; i < gridPointsArray.size(); i++) {
+                xPoints[i] = gridPointsArray.get(i)[0];
+                yPoints[i] = gridPointsArray.get(i)[1];
+            }
+            theGc.setFill(Paint.valueOf("#2196F3"));
+            drawPolygonWithGridPointsArray(theGc, xPoints, yPoints, FILL, gridPointsArray.size(), 3);
+        }
+
+        numberOfPointsLabel.setText(numberOfPoints + " points");
     }
 
-    private int snapToGrid(int position) {
+    private int snapToGridPixels(int position) {
         return round(position, gridSize);
     }
 
@@ -126,11 +153,6 @@ public class Main extends Application {
 
 
     private void drawShapes(GraphicsContext gc) {
-        gc.setFill(Color.LIGHTBLUE);
-        gc.setStroke(Color.BLUE);
-        gc.setLineWidth(2);
-        drawTriangleWithGridPoints(gc, coord(1,1), coord(1,5), coord(5,5), FILL, 5);
-        drawTriangleWithGridPoints(gc, coord(1,6), coord(1,11), coord(5,11), FILL, 5);
         gc.applyEffect(new DropShadow(3, Color.GREY));
     }
 
@@ -144,6 +166,11 @@ public class Main extends Application {
     }
 
     private void drawGrid(GraphicsContext gc) {
+
+        gc.setStroke(Color.LIGHTGRAY);
+        gc.setLineWidth(0.5);
+
+
         double height = canvasX;
         double width = canvasY;
 
@@ -173,6 +200,22 @@ public class Main extends Application {
         }
     }
 
+    private void drawPolygonWithGridPointsArray(GraphicsContext gc,
+                                            double[] xPoints,
+                                            double[] yPoints,
+                                            int type, int numberOfPoints,
+                                            @Nullable Integer strokeSize) {
+        gc.setLineWidth(strokeSize);
+        if (type == FILL || type == FILL_WITH_STROKE)
+            gc.fillPolygon(gridArrayToPixels(xPoints),
+                    gridArrayToPixels(yPoints), numberOfPoints);
+        if (type == STROKE || type == FILL_WITH_STROKE) {
+            gc.strokePolygon(gridArrayToPixels(xPoints),
+                    gridArrayToPixels(yPoints), numberOfPoints);
+        }
+    }
+
+
     private double[] coord(double x, double y){
         return new double[]{x, y};
     }
@@ -182,6 +225,11 @@ public class Main extends Application {
         return pixels;
     }
 
+    /**
+     * Takes a grid value double and converts it to the same value in pixels
+     * @param gridValues a double[] grid point ([0] is x [1] is y)
+     * @return a double[] pixel point ([0] is x [1] is y)
+     */
     private double[] gridArrayToPixels(double[] gridValues) {
         double[] result = new double[gridValues.length];
 
@@ -189,5 +237,9 @@ public class Main extends Application {
             result[i] = gridValues[i] * gridSize;
         }
         return result;
+    }
+
+    private double pixelsToGrid(double pixelValue) {
+        return pixelValue / gridSize;
     }
 }
